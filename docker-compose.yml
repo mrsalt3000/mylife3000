@@ -1,8 +1,8 @@
 services:
   bot:
-    image:  localhost/mylife3000_base_image:3.13
+    image:  mrsalt3000/mylife3000:v1.0
     working_dir: /project
     volumes:
-      - "E:\\work\\myLife3000\\docker\\questionary:/project"
+      - ".:/project"
     command: sh -c "python main.py"
     restart: unless-stopped
