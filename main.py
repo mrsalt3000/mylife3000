@@ -3,7 +3,16 @@
 
 import logging
 import random
+import os
+
 from typing import Dict
+from dotenv import load_dotenv
+
+load_dotenv()  # Загружает переменные из .env
+
+token = os.getenv("BOT_TOKEN")
+if not token:
+    raise ValueError("Токен не найден! Проверьте .env файл.")
 
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
 from telegram.ext import (
@@ -84,6 +93,7 @@ async def handle_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 Привет! 
 Этот бот — твой личный проводник в мире саморефлексии. 
 Мы собрали глубокие и иногда неожиданные вопросы, чтобы помочь тебе лучше узнать себя и создать живые мемуары, которые не напишешь по шаблону.
+
 Как с этим работать? Всё просто:
     1. Выбирай тему, которая откликается тебе прямо сейчас.
     2. Получай карточку с вопросом. 
@@ -289,7 +299,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 def main() -> None:
     """Запускает бота."""
-    application = Application.builder().token("8188231084:AAFaskYZTaFz2UnnQ91az0cTN3HX36U4YnQ").build()
+    application = Application.builder().token(token).build()
 
     # Создаем обработчик диалога
     conv_handler = ConversationHandler(

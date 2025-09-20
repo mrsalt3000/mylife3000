@@ -1,6 +1,6 @@
 services:
   bot:
-    image:  mrsalt3000/mylife3000:v1.0
+    image:  mrsalt3000/mylife3000:v1.0.1
     working_dir: /project
     volumes:
       - ".:/project"
