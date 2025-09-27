@@ -15,6 +15,7 @@ from telegram.ext import (
 from config import BOT_TOKEN, MAIN_MENU, SECTION_MENU, THEME, RESULT
 from handlers import start, handle_main_menu, handle_section_choice, handle_theme_choice, handle_result_choice, cancel
 from database import db
+from questionary import Questionary
 
 # Enable logging
 logging.basicConfig(
@@ -27,6 +28,11 @@ logger = logging.getLogger(__name__)
 async def post_init(application):
     """Функция инициализации после создания приложения"""
     await db.init_pool()
+    
+    # Инициализируем Questionary и сохраняем в bot_data для dependency injection
+    questionary = Questionary()
+    application.bot_data['questionary'] = questionary
+    
     logger.info("Bot initialization completed")
 
 async def post_stop(application):
