@@ -1,8 +1,33 @@
+version: '3.8'
+
 services:
   bot:
-    image:  mrsalt3000/mylife3000:v1.0.2
+    image: mrsalt3000/mylife3000:v1.0.2
     working_dir: /project
     volumes:
       - ".:/project"
     command: sh -c "python main.py"
     restart: unless-stopped
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+
+  postgres:
+    image: postgres:13
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pg_mylife3000:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+
+volumes:
+  pg_mylife3000:
