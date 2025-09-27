@@ -1,0 +1,8 @@
+CREATE SCHEMA IF NOT EXISTS converstions;
+
+CREATE TABLE IF NOT EXISTS converstions.dialogs (
+    id SERIAL PRIMARY KEY,
+    start_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    end_time TIMESTAMP WITH TIME ZONE,
+    dialog_state VARCHAR(50)
+);
