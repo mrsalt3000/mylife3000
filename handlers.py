@@ -10,10 +10,10 @@ from telegram.ext import ContextTypes, ConversationHandler
 
 from config import (
     MAIN_MENU, SECTION_MENU, THEME, RESULT,
-    SECTION_QUESTIONS, SECTION_DESCRIPTIONS,
     MAIN_MENU_KEYBOARD, SECTION_MENU_KEYBOARD, RESULT_MENU_KEYBOARD
 )
 from database import db
+from questionary import Questionary
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +47,10 @@ async def handle_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     """Обрабатывает выбор в главном меню."""
     user_choice = update.message.text
     
-    if user_choice in SECTION_QUESTIONS:
+    questionary: Questionary = context.bot_data['questionary']
+    
+    if user_choice in questionary.get_all_sections():
         context.user_data['current_section'] = user_choice
-        context.user_data['current_questions'] = SECTION_QUESTIONS[user_choice]
         
         # Обновляем состояние диалога
         try:
@@ -58,7 +59,7 @@ async def handle_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         except Exception as e:
             logger.error(f"Error updating dialog state: {e}")
             
-        return await show_section_menu(update, context)
+        return await show_section_menu(update, context, questionary)
     elif user_choice == "О проекте":
         # Завершаем диалог при выборе "О проекте"
         await end_dialog(context, 'project_info')
@@ -94,11 +95,11 @@ async def handle_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         )
         return MAIN_MENU
 
-async def show_section_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def show_section_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, questionary: Questionary) -> int:
     """Показывает меню выбранного раздела."""
     section_name = context.user_data['current_section']
     
-    description = SECTION_DESCRIPTIONS.get(section_name, "Выбери действие:")
+    description = questionary.get_section_description(section_name)
 
     await update.message.reply_text(
         f"{description}\n\n"
@@ -113,39 +114,44 @@ async def show_section_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 async def handle_section_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Обрабатывает выбор в разделе."""
     user_choice = update.message.text
-    questions = context.user_data.get('current_questions', {})
+    questionary: Questionary = context.bot_data['questionary']
+    section_name = context.user_data.get('current_section')
     
     if user_choice == "Главное меню":
         return await start(update, context)
     elif user_choice == "Случайный вопрос":
-        if "Случайный вопрос" in questions:
-            random_question = random.choice(questions["Случайный вопрос"])
-        else:
-            # Если нет специальной категории "Случайный вопрос", выбираем из всех вопросов раздела
-            all_questions = []
-            for theme_questions in questions.values():
-                all_questions.extend(theme_questions)
-            random_question = random.choice(all_questions)
-            
+        if section_name:
+            random_question = questionary.get_random_question(section_name)
+            if random_question:
+                await update.message.reply_text(
+                    f"📖 {random_question}\n\n"
+                    "Хочешь еще вопрос? Отправь /start",
+                    reply_markup=ReplyKeyboardRemove()
+                )
+                await end_dialog(context, 'random_question')
+                return ConversationHandler.END
+        
+        # Если что-то пошло не так
         await update.message.reply_text(
-            f"📖 {random_question}\n\n"
-            "Хочешь еще вопрос? Отправь /start",
-            reply_markup=ReplyKeyboardRemove()
+            "Произошла ошибка при выборе вопроса. Попробуй еще раз.",
+            reply_markup=ReplyKeyboardMarkup(SECTION_MENU_KEYBOARD)
         )
-        await end_dialog(context, 'random_question')
-        return ConversationHandler.END
+        return SECTION_MENU
     elif user_choice == "Выбрать тему":
-        return await theme_choice(update, context)
+        return await theme_choice(update, context, questionary)
     else:
         await update.message.reply_text(
             "Пожалуйста, выбери один из предложенных вариантов"
         )
         return SECTION_MENU
 
-async def theme_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def theme_choice(update: Update, context: ContextTypes.DEFAULT_TYPE, questionary: Questionary) -> int:
     """Предлагает выбор темы."""
-    questions = context.user_data.get('current_questions', {})
-    themes = [key for key in questions.keys() if key != "Случайный вопрос"]
+    section_name = context.user_data.get('current_section')
+    if not section_name:
+        return await start(update, context)
+        
+    themes = questionary.get_themes(section_name)
     reply_keyboard = [[theme] for theme in themes] + [["Назад", "Главное меню"]]
 
     await update.message.reply_text(
@@ -160,48 +166,53 @@ async def theme_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 async def handle_theme_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Обрабатывает выбор темы и показывает вопрос."""
     theme = update.message.text
-    questions = context.user_data.get('current_questions', {})
+    questionary: Questionary = context.bot_data['questionary']
+    section_name = context.user_data.get('current_section')
+    
+    if not section_name:
+        return await start(update, context)
     
     if theme == "Главное меню":
         return await start(update, context)
     elif theme == "Назад":
-        return await show_section_menu(update, context)
+        return await show_section_menu(update, context, questionary)
     
-    if theme in questions:
-        question = random.choice(questions[theme])
+    # Проверяем, что тема существует в выбранном разделе
+    themes = questionary.get_themes(section_name)
+    if theme in themes:
+        question = questionary.get_random_question(section_name, theme)
         
-        # Обновляем состояние диалога
-        try:
-            if 'dialog_id' in context.user_data:
-                await db.update_dialog_state(context.user_data['dialog_id'], f'theme_{theme}')
-        except Exception as e:
-            logger.error(f"Error updating dialog state: {e}")
-        
-        await update.message.reply_text(
-            f"📖 {question}\n\n"
-            "Что хочешь сделать дальше?",
-            reply_markup=ReplyKeyboardMarkup(
-                RESULT_MENU_KEYBOARD
+        if question:
+            # Обновляем состояние диалога
+            try:
+                if 'dialog_id' in context.user_data:
+                    await db.update_dialog_state(context.user_data['dialog_id'], f'theme_{theme}')
+            except Exception as e:
+                logger.error(f"Error updating dialog state: {e}")
+            
+            await update.message.reply_text(
+                f"📖 {question}\n\n"
+                "Что хочешь сделать дальше?",
+                reply_markup=ReplyKeyboardMarkup(RESULT_MENU_KEYBOARD)
             )
-        )
-        context.user_data['last_theme'] = theme
-        return RESULT
-    else:
-        themes = [key for key in questions.keys() if key != "Случайный вопрос"]
-        reply_keyboard = [[theme] for theme in themes] + [["Назад", "Главное меню"]]
-        
-        await update.message.reply_text(
-            "Пожалуйста, выбери одну из предложенных тем",
-            reply_markup=ReplyKeyboardMarkup(
-                reply_keyboard
-            )
-        )
-        return THEME
+            context.user_data['last_theme'] = theme
+            context.user_data['last_section'] = section_name
+            return RESULT
+    
+    # Если тема не найдена
+    themes = questionary.get_themes(section_name)
+    reply_keyboard = [[theme] for theme in themes] + [["Назад", "Главное меню"]]
+    
+    await update.message.reply_text(
+        "Пожалуйста, выбери одну из предложенных тем",
+        reply_markup=ReplyKeyboardMarkup(reply_keyboard)
+    )
+    return THEME
 
 async def handle_result_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Обрабатывает выбор после показа вопроса."""
     choice = update.message.text
-    questions = context.user_data.get('current_questions', {})
+    questionary: Questionary = context.bot_data['questionary']
     
     if choice == "Главное меню":
         return await start(update, context)
@@ -214,23 +225,24 @@ async def handle_result_choice(update: Update, context: ContextTypes.DEFAULT_TYP
         return ConversationHandler.END
 
     last_theme = context.user_data.get('last_theme')
+    last_section = context.user_data.get('last_section')
+    
     if choice == "Еще вопрос":
-        if last_theme and last_theme in questions:
-            question = random.choice(questions[last_theme])
-            
-            await update.message.reply_text(
-                f"📖 {question}\n\n"
-                "Что хочешь сделать дальше?",
-                reply_markup=ReplyKeyboardMarkup(
-                    RESULT_MENU_KEYBOARD
+        if last_section and last_theme:
+            question = questionary.get_random_question(last_section, last_theme)
+            if question:
+                await update.message.reply_text(
+                    f"📖 {question}\n\n"
+                    "Что хочешь сделать дальше?",
+                    reply_markup=ReplyKeyboardMarkup(RESULT_MENU_KEYBOARD)
                 )
-            )
-            return RESULT
-        else:
-            return await theme_choice(update, context)
+                return RESULT
+        
+        # Если нет последней темы, возвращаем к выбору темы
+        return await theme_choice(update, context, questionary)
     
     elif choice == "Выбрать другую тему":
-        return await theme_choice(update, context)
+        return await theme_choice(update, context, questionary)
     
     else:
         await update.message.reply_text(
