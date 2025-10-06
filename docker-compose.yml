@@ -1,20 +1,4 @@
-version: '3.8'
-
 services:
-  bot:
-    image: mrsalt3000/mylife3000:v1.0.2
-    working_dir: /project
-    volumes:
-      - ".:/project"
-    command: sh -c "python main.py"
-    restart: unless-stopped
-    depends_on:
-      - postgres
-    env_file:
-      - .env
-    environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-
   postgres:
     image: postgres:13
     env_file:
@@ -28,6 +12,27 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  bot:
+    image: mrsalt3000/mylife3000:v1.0.2
+    working_dir: /project  
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    volumes:
+      - ".:/project"
+    command:  bash -c "python -m src" #В режиме разработки такой запуск удобнее
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+
 
 volumes:
   pg_mylife3000:

@@ -3,7 +3,7 @@
 
 import random
 from typing import Dict, List, Optional
-from questions_data import (
+from .questions_data import (
     QUESTIONS_SELF_KNOWLEDGE, QUESTIONS_VECTOR, QUESTIONS_CHALLENGES,
     QUESTIONS_ENVIRONMENT, QUESTIONS_INTEGRATION, QUESTIONS_MEMORIES
 )
