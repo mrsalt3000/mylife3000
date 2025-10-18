@@ -8,12 +8,12 @@ from typing import Dict
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
 from telegram.ext import ContextTypes, ConversationHandler
 
-from config import (
+from .config import (
     MAIN_MENU, SECTION_MENU, THEME, RESULT,
     MAIN_MENU_KEYBOARD, SECTION_MENU_KEYBOARD, RESULT_MENU_KEYBOARD
 )
-from database import db
-from questionary import Questionary
+from .database import db
+from .questionary import Questionary
 
 logger = logging.getLogger(__name__)
 
