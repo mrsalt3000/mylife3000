@@ -12,10 +12,10 @@ from telegram.ext import (
     filters,
 )
 
-from config import BOT_TOKEN, MAIN_MENU, SECTION_MENU, THEME, RESULT
-from handlers import start, handle_main_menu, handle_section_choice, handle_theme_choice, handle_result_choice, cancel
-from database import db
-from questionary import Questionary
+from .config import BOT_TOKEN, MAIN_MENU, SECTION_MENU, THEME, RESULT
+from .handlers import start, handle_main_menu, handle_section_choice, handle_theme_choice, handle_result_choice, cancel
+from .database import db
+from .questionary import Questionary
 
 # Enable logging
 logging.basicConfig(

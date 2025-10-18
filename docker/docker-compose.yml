@@ -1,15 +1,14 @@
-version: '3.8'
-
 services:
   bot:
     image: mrsalt3000/mylife3000:v1.0.2
     working_dir: /project
     volumes:
-      - ".:/project"
-    command: sh -c "python main.py"
+      - "../:/project"
+    command: sh -c "python -m src.mylife3000.main" 
     restart: unless-stopped
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -24,10 +23,17 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - pg_mylife3000:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db_mylife3000:/var/lib/postgresql/data
+      - ../data/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
+    healthcheck:
+      test: |
+        pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} &&
+        psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c "SELECT 1 FROM conversations.dialogs LIMIT 1;"
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
-  pg_mylife3000:
+  db_mylife3000:
