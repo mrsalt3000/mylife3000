@@ -1,4 +1,15 @@
-#!/usr/bin/env python
+"""
+Модуль для работы с базой данных.
+
+Реализует паттерн Repository для абстракции доступа к данным.
+Использует asyncpg для асинхронного подключения к PostgreSQL.
+
+Classes:
+    Database: Основной класс для управления подключением и операциями с БД
+
+Attributes:
+    db (Database): Глобальный экземпляр базы данных
+"""
 
 import asyncpg
 import logging
@@ -8,11 +19,29 @@ from .config import DATABASE_URL
 logger = logging.getLogger(__name__)
 
 class Database:
+    """
+    Класс для управления подключением и операциями с базой данных.
+    
+    Использует пул подключений asyncpg для эффективного управления
+    соединениями с PostgreSQL.
+    
+    Attributes:
+        pool (Optional[asyncpg.Pool]): Пул подключений к БД
+    """
+    
     def __init__(self):
         self.pool: Optional[asyncpg.Pool] = None
 
     async def init_pool(self):
-        """Инициализация пула подключений"""
+        """
+        Инициализирует пул подключений к базе данных.
+        
+        Raises
+        ------
+        Exception
+            Если подключение не удалось или таблицы не существуют
+        """
+
         try:
             self.pool = await asyncpg.create_pool(
                 DATABASE_URL,
@@ -34,7 +63,20 @@ class Database:
             raise
 
     async def start_dialog(self) -> int:
-        """Начало диалога и возврат ID записи"""
+        """
+        Создает новую запись о начале диалога.
+        
+        Returns
+        -------
+        int
+            ID созданного диалога
+            
+        Raises
+        ------
+        RuntimeError
+            Если пул подключений не инициализирован
+        """
+
         if not self.pool:
             raise RuntimeError("Database pool not initialized")
             
@@ -47,7 +89,22 @@ class Database:
             return dialog_id
 
     async def end_dialog(self, dialog_id: int, state: str = 'completed'):
-        """Завершение диалога"""
+        """
+        Отмечает диалог как завершенный.
+        
+        Parameters
+        ----------
+        dialog_id : int
+            ID диалога для завершения
+        state : str, optional
+            Финальное состояние диалога, по умолчанию 'completed'
+            
+        Raises
+        ------
+        RuntimeError
+            Если пул подключений не инициализирован
+        """
+
         if not self.pool:
             raise RuntimeError("Database pool not initialized")
             
@@ -59,7 +116,22 @@ class Database:
             ''', state, dialog_id)
 
     async def update_dialog_state(self, dialog_id: int, state: str):
-        """Обновление состояния диалога"""
+        """
+        Обновляет состояние диалога.
+        
+        Parameters
+        ----------
+        dialog_id : int
+            ID диалога для обновления
+        state : str
+            Новое состояние диалога
+            
+        Raises
+        ------
+        RuntimeError
+            Если пул подключений не инициализирован
+        """
+        
         if not self.pool:
             raise RuntimeError("Database pool not initialized")
             

@@ -1,5 +1,14 @@
-#!/usr/bin/env python
-# pylint: disable=unused-argument
+"""
+Основной модуль запуска бота.
+
+Инициализирует приложение, настраивает обработчики и запускает бота.
+Использует dependency injection для передачи зависимостей.
+
+Functions:
+    post_init: Инициализация после создания приложения
+    post_stop: Очистка ресурсов при остановке
+    main: Основная функция запуска бота
+"""
 
 import logging
 import asyncio
@@ -26,7 +35,15 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 async def post_init(application):
-    """Функция инициализации после создания приложения"""
+    """
+    Инициализирует бота после создания приложения.
+    
+    Parameters
+    ----------
+    application : Application
+        Экземпляр приложения Telegram Bot
+    """
+    
     await db.init_pool()
     
     # Инициализируем Questionary и сохраняем в bot_data для dependency injection
@@ -36,12 +53,26 @@ async def post_init(application):
     logger.info("Bot initialization completed")
 
 async def post_stop(application):
-    """Функция очистки при остановке бота"""
+    """
+    Выполняет очистку ресурсов при остановке бота.
+    
+    Parameters
+    ----------
+    application : Application
+        Экземпляр приложения Telegram Bot
+    """
+
     await db.close()
     logger.info("Bot shutdown completed")
 
 def main() -> None:
-    """Запускает бота."""
+    """
+    Основная функция запуска бота.
+    
+    Инициализирует приложение, настраивает обработчики диалога
+    и запускает режим опроса (polling).
+    """
+    
     application = Application.builder().token(BOT_TOKEN).build()
     
     # Добавляем обработчики инициализации и остановки
