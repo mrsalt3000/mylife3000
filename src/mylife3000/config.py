@@ -1,5 +1,17 @@
-#!/usr/bin/env python
-# pylint: disable=unused-argument
+"""
+Конфигурационный модуль бота.
+
+Содержит настройки приложения, включая:
+- Переменные окружения
+- Состояния диалога (FSM)
+- Клавиатуры и текстовые константы
+
+Variables:
+    BOT_TOKEN (str): Токен Telegram бота
+    DATABASE_URL (str): URL подключения к PostgreSQL
+    MAIN_MENU, SECTION_MENU, THEME, RESULT (int): Состояния конечного автомата
+    *_KEYBOARD (List[List[str]]): Массивы кнопок для клавиатур
+"""
 
 import os
 from typing import Dict

@@ -1,5 +1,20 @@
-#!/usr/bin/env python
-# pylint: disable=unused-argument
+"""
+Модуль обработчиков Telegram бота.
+
+Содержит обработчики сообщений и команды, реализующие логику диалога.
+Использует ConversationHandler для управления состоянием диалога.
+
+Functions:
+    start: Начало диалога, показывает главное меню
+    handle_main_menu: Обработка выбора в главном меню
+    show_section_menu: Показ меню раздела
+    handle_section_choice: Обработка выбора в разделе
+    theme_choice: Выбор темы вопросов
+    handle_theme_choice: Обработка выбора темы
+    handle_result_choice: Обработка действий после показа вопроса
+    cancel: Завершение диалога
+    end_dialog: Утилита для завершения диалога в БД
+"""
 
 import logging
 import random
@@ -18,7 +33,21 @@ from .questionary import Questionary
 logger = logging.getLogger(__name__)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Начинает диалог и показывает главное меню."""
+    """
+    Инициализирует новый диалог и показывает главное меню.
+    
+    Parameters
+    ----------
+    update : Update
+        Объект обновления от Telegram API
+    context : ContextTypes.DEFAULT_TYPE
+        Контекст выполнения обработчика
+        
+    Returns
+    -------
+    int
+        Следующее состояние диалога (MAIN_MENU)
+    """
     user = update.effective_user
     
     try:
@@ -44,7 +73,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return MAIN_MENU
 
 async def handle_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Обрабатывает выбор в главном меню."""
+    """
+    Обрабатывает выбор пользователя в главном меню.
+    
+    Parameters
+    ----------
+    update : Update
+        Объект обновления от Telegram API
+    context : ContextTypes.DEFAULT_TYPE
+        Контекст выполнения обработчика
+        
+    Returns
+    -------
+    int
+        Следующее состояние диалога или ConversationHandler.END
+    """
     user_choice = update.message.text
     
     questionary: Questionary = context.bot_data['questionary']
@@ -96,7 +139,24 @@ async def handle_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         return MAIN_MENU
 
 async def show_section_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, questionary: Questionary) -> int:
-    """Показывает меню выбранного раздела."""
+    """
+    Показывает меню выбранного раздела с описанием.
+    
+    Parameters
+    ----------
+    update : Update
+        Объект обновления от Telegram API
+    context : ContextTypes.DEFAULT_TYPE
+        Контекст выполнения обработчика
+    questionary : Questionary
+        Экземпляр Questionary для доступа к описаниям разделов
+        
+    Returns
+    -------
+    int
+        Следующее состояние диалога (SECTION_MENU)
+    """
+
     section_name = context.user_data['current_section']
     
     description = questionary.get_section_description(section_name)
@@ -112,7 +172,22 @@ async def show_section_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     return SECTION_MENU
 
 async def handle_section_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Обрабатывает выбор в разделе."""
+    """
+    Обрабатывает выбор пользователя в меню раздела.
+    
+    Parameters
+    ----------
+    update : Update
+        Объект обновления от Telegram API
+    context : ContextTypes.DEFAULT_TYPE
+        Контекст выполнения обработчика
+        
+    Returns
+    -------
+    int
+        Следующее состояние диалога или ConversationHandler.END
+    """
+
     user_choice = update.message.text
     questionary: Questionary = context.bot_data['questionary']
     section_name = context.user_data.get('current_section')
@@ -146,7 +221,24 @@ async def handle_section_choice(update: Update, context: ContextTypes.DEFAULT_TY
         return SECTION_MENU
 
 async def theme_choice(update: Update, context: ContextTypes.DEFAULT_TYPE, questionary: Questionary) -> int:
-    """Предлагает выбор темы."""
+    """
+    Предлагает пользователю выбор темы в текущем разделе.
+    
+    Parameters
+    ----------
+    update : Update
+        Объект обновления от Telegram API
+    context : ContextTypes.DEFAULT_TYPE
+        Контекст выполнения обработчика
+    questionary : Questionary
+        Экземпляр Questionary для доступа к темам
+        
+    Returns
+    -------
+    int
+        Следующее состояние диалога (THEME)
+    """
+
     section_name = context.user_data.get('current_section')
     if not section_name:
         return await start(update, context)
@@ -164,7 +256,22 @@ async def theme_choice(update: Update, context: ContextTypes.DEFAULT_TYPE, quest
     return THEME
 
 async def handle_theme_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Обрабатывает выбор темы и показывает вопрос."""
+    """
+    Обрабатывает выбор темы и показывает случайный вопрос из выбранной темы.
+    
+    Parameters
+    ----------
+    update : Update
+        Объект обновления от Telegram API
+    context : ContextTypes.DEFAULT_TYPE
+        Контекст выполнения обработчика
+        
+    Returns
+    -------
+    int
+        Следующее состояние диалога (RESULT)
+    """
+
     theme = update.message.text
     questionary: Questionary = context.bot_data['questionary']
     section_name = context.user_data.get('current_section')
@@ -210,7 +317,22 @@ async def handle_theme_choice(update: Update, context: ContextTypes.DEFAULT_TYPE
     return THEME
 
 async def handle_result_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Обрабатывает выбор после показа вопроса."""
+    """
+    Обрабатывает действия пользователя после показа вопроса.
+    
+    Parameters
+    ----------
+    update : Update
+        Объект обновления от Telegram API
+    context : ContextTypes.DEFAULT_TYPE
+        Контекст выполнения обработчика
+        
+    Returns
+    -------
+    int
+        Следующее состояние диалога или ConversationHandler.END
+    """
+
     choice = update.message.text
     questionary: Questionary = context.bot_data['questionary']
     
@@ -251,7 +373,22 @@ async def handle_result_choice(update: Update, context: ContextTypes.DEFAULT_TYP
         return RESULT
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Завершает диалог."""
+    """
+    Завершает диалог по команде /cancel.
+    
+    Parameters
+    ----------
+    update : Update
+        Объект обновления от Telegram API
+    context : ContextTypes.DEFAULT_TYPE
+        Контекст выполнения обработчика
+        
+    Returns
+    -------
+    int
+        ConversationHandler.END
+    """
+
     await update.message.reply_text(
         "До встречи! 👋\n/start", 
         reply_markup=ReplyKeyboardRemove()
@@ -260,7 +397,17 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return ConversationHandler.END
 
 async def end_dialog(context: ContextTypes.DEFAULT_TYPE, state: str = 'completed'):
-    """Завершает диалог в базе данных."""
+    """
+    Завершает диалог в базе данных.
+    
+    Parameters
+    ----------
+    context : ContextTypes.DEFAULT_TYPE
+        Контекст выполнения обработчика
+    state : str, optional
+        Состояние завершения диалога, по умолчанию 'completed'
+    """
+    
     try:
         if 'dialog_id' in context.user_data:
             await db.end_dialog(context.user_data['dialog_id'], state)
