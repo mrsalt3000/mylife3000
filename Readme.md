@@ -13,4 +13,4 @@
 
 ## Документация
 
-Полная документация доступна по ссылке: [https://mylife3000.readthedocs.io/](https://mylife3000.readthedocs.io/)
+Полная документация доступна по ссылке: [https://mylife3000.readthedocs.io/](https://mylife3000.readthedocs.io/ru/latest/)
