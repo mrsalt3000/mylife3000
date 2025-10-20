@@ -1,0 +1,30 @@
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+
+version: 2
+
+# Set the OS, Python version, and other tools you might need
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.11"
+    # Используем более стабильную версию Python
+
+# Build documentation in the docs/ directory with Sphinx
+sphinx:
+  configuration: docs/source/conf.py
+  # Указываем правильный путь к конфигурации
+
+# Python configuration
+python:
+  install:
+    - requirements: docs/requirements.txt
+    # Устанавливаем зависимости для сборки документации
+    - method: pip
+      path: .
+      # Устанавливаем ваш пакет в режиме разработки
+      # Это нужно для корректной работы autodoc
+
+# Optionally set the version of Python and other tools
+# Формат версий (рекомендуется указывать конкретные версии):
+# python: "3.11"  # или "3.10", "3.9" - что поддерживает ваш проект
