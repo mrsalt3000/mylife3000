@@ -4,7 +4,7 @@ services:
     working_dir: /project
     volumes:
       - "../:/project"
-    command: sh -c "python -m src.mylife3000.main" 
+    command: sh -c "python -m src.mylife3000" 
     restart: unless-stopped
     depends_on:
       postgres:
@@ -23,7 +23,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - db_mylife3000:/var/lib/postgresql/data
+      - pg_mylife3000:/var/lib/postgresql/data
       - ../data/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
@@ -36,4 +36,4 @@ services:
       retries: 5
 
 volumes:
-  db_mylife3000:
+  pg_mylife3000:
