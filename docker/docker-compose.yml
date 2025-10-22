@@ -4,7 +4,7 @@ services:
     working_dir: /project
     volumes:
       - "../:/project"
-    command: sh -c "python -m src.mylife3000" 
+    command: sh -c "PYTHONPATH=src python -m mylife3000" 
     restart: unless-stopped
     depends_on:
       postgres:
